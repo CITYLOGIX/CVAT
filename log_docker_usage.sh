@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 # ================================================================
 # Docker Resource Usage Logger with Timed Log Rotation
 # ---------------------------------------------------------------
@@ -24,10 +22,11 @@
 # =========================
 # CONFIGURATION
 # =========================
-INTERVAL=10                         # Seconds between docker stats samples
-LOG_DIR="./docker_usage_logs"      # Where to store all logs
-RETENTION_DAYS=7                   # How long to keep logs
-LOG_INTERVAL_HOURS=4               # Create new stats/log files every 4 hours
+INTERVAL=10                             # Seconds between docker stats samples
+LOG_STATS_DIR="/home/roadrunners/cvat_stats_logs"   # Where to store all logs
+LOG_CONTAINER_DIR="/home/roadrunners/cvat__container_logs"   # Where to store all logs
+RETENTION_DAYS=7                        # How long to keep logs
+LOG_INTERVAL_HOURS=2                    # Create new stats/log files every 2 hours
 
 # =========================
 # SETUP
@@ -38,7 +37,7 @@ CURRENT_STATS_FILE=""
 
 echo "🚀 Docker resource logger started"
 echo "Stats interval: $INTERVAL sec, log rotation every $LOG_INTERVAL_HOURS hours"
-echo "Log directory: $LOG_DIR"
+echo "Log directory: $LOG_STATS_DIR"
 
 # =========================
 # MAIN LOOP
@@ -49,12 +48,11 @@ while true; do
     # Determine if it's time for a new file
     if (( NOW - LAST_DUMP_TIME >= LOG_INTERVAL_HOURS * 3600 )); then
         TIME_TAG=$(date "+%Y-%m-%d_%H-%M")
-        CURRENT_STATS_FILE="$LOG_DIR/docker_stats_${TIME_TAG}.log"
-        echo "🆕 New stats/log files created: $CURRENT_STATS_FILE"
+        CURRENT_STATS_FILE="$LOG_STATS_DIR/docker_stats_${TIME_TAG}.log"
 
         # Dump full logs for each container
         for CONTAINER in $(docker ps --format '{{.Names}}'); do
-            LOG_FILE="$LOG_DIR/${CONTAINER}_log_${TIME_TAG}.txt"
+            LOG_FILE="$LOG_CONTAINER_DIR/${CONTAINER}_log_${TIME_TAG}.txt"
             docker logs "$CONTAINER" &> "$LOG_FILE"
         done
 
@@ -69,7 +67,8 @@ while true; do
     } >> "$CURRENT_STATS_FILE"
 
     # Clean up old logs
-    find "$LOG_DIR" -type f -name "*.log" -mtime +$RETENTION_DAYS -exec rm {} \;
+    find "$LOG_CONTAINER_DIR" -type f -name "*.log" -mtime +$RETENTION_DAYS -exec rm {} \;
+    find "$LOG_STATS_DIR" -type f -name "*.log" -mtime +$RETENTION_DAYS -exec rm {} \;
 
     sleep "$INTERVAL"
 done
