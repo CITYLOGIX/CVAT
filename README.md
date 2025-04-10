@@ -22,5 +22,5 @@ This script continuously monitors Docker container resource usage and archives l
 
 ## 📁 Output Structure
 
-Logs are saved in a `docker_usage_logs/` directory:
+Logs are saved in the roadrunners home directory:
 
